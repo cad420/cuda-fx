@@ -1,14 +1,16 @@
 #pragma once
 
+#include <VMUtils/modules.hpp>
+
 #include "stream.hpp"
 #include "memory.hpp"
 #include "array.hpp"
 
-namespace cufx
-{
-namespace _
-{
-template <typename T, std::size_t N>
+VM_BEGIN_MODULE( cufx )
+
+using namespace std;
+
+template <typename T, size_t N>
 cudaMemcpyKind copy_type( MemoryViewND<T, N> const &dst, MemoryViewND<T, N> const &src )
 {
 	if ( dst.device_id().is_host() ) {
@@ -26,13 +28,13 @@ cudaMemcpyKind copy_type( MemoryViewND<T, N> const &dst, MemoryViewND<T, N> cons
 	}
 }
 
-template <typename T, std::size_t N>
+template <typename T, size_t N>
 cudaMemcpyKind copy_type( MemoryViewND<T, N> const &src )
 {
 	return src.device_id().is_device() ? cudaMemcpyDeviceToDevice : cudaMemcpyHostToDevice;
 }
 
-template <typename T, std::size_t N>
+template <typename T, size_t N>
 struct MemTrans;
 
 template <typename T>
@@ -76,7 +78,7 @@ struct MemTrans<T, 3>
 	}
 };
 
-template <typename T, std::size_t N>
+template <typename T, size_t N>
 struct ArrayTrans;
 
 template <typename T>
@@ -126,22 +128,23 @@ struct ArrayTrans<T, 3>
 	}
 };
 
-}  // namespace _
-
-template <typename T, std::size_t N>
-Task memory_transfer( MemoryViewND<T, N> const &dst, MemoryViewND<T, N> const &src )
+VM_EXPORT
 {
-	auto dst_lock = dst.device_id().lock();
-	auto src_lock = src.device_id().lock();
-	return _::MemTrans<T, N>::transfer( dst, src );
+	template <typename T, size_t N>
+	Task memory_transfer( MemoryViewND<T, N> const &dst, MemoryViewND<T, N> const &src )
+	{
+		auto dst_lock = dst.device_id().lock();
+		auto src_lock = src.device_id().lock();
+		return MemTrans<T, N>::transfer( dst, src );
+	}
+
+	template <typename T, size_t N>
+	Task memory_transfer( ArrayND<T, N> const &dst, MemoryViewND<T, N> const &src )
+	{
+		auto dst_lock = dst.device_id().lock();
+		auto src_lock = src.device_id().lock();
+		return ArrayTrans<T, N>::transfer( dst, src );
+	}
 }
 
-template <typename T, std::size_t N>
-Task memory_transfer( ArrayND<T, N> const &dst, MemoryViewND<T, N> const &src )
-{
-	auto dst_lock = dst.device_id().lock();
-	auto src_lock = src.device_id().lock();
-	return _::ArrayTrans<T, N>::transfer( dst, src );
-}
-
-}  // namespace cufx
+VM_END_MODULE()

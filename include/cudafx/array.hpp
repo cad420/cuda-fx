@@ -1,15 +1,16 @@
 #pragma once
 
+#include <VMUtils/modules.hpp>
 #include "stream.hpp"
 #include "device_id.hpp"
 #include "misc.hpp"
 
-namespace cufx
-{
-namespace _
-{
-template <typename E, std::size_t N>
-struct Array
+VM_BEGIN_MODULE( cufx )
+
+using namespace std;
+
+template <typename E, size_t N>
+struct ArrayImpl
 {
 private:
 	struct Inner
@@ -33,76 +34,76 @@ public:
 #endif
 
 protected:
-	std::shared_ptr<Inner> _ = std::make_shared<Inner>();
+	shared_ptr<Inner> _ = make_shared<Inner>();
 };
 
-}  // namespace _
-
-template <typename E, std::size_t N>
-struct ArrayND;
-
-template <typename E>
-struct ArrayND<E, 1> : _::Array<E, 1>
+VM_EXPORT
 {
-	ArrayND( std::size_t len, DeviceId const &device = DeviceId{} ) :
-	  w( len )
+	template <typename E, size_t N>
+	struct ArrayND;
+
+	template <typename E>
+	struct ArrayND<E, 1> : ArrayImpl<E, 1>
 	{
-		auto lock = device.lock();
-		auto desc = cudaCreateChannelDesc<E>();
-		cudaMallocArray( &this->_->_, &desc, w, 1 );
-		this->_->device = device;
-	}
+		ArrayND( size_t len, DeviceId const &device = DeviceId{} ) :
+		  w( len )
+		{
+			auto lock = device.lock();
+			auto desc = cudaCreateChannelDesc<E>();
+			cudaMallocArray( &this->_->_, &desc, w, 1 );
+			this->_->device = device;
+		}
 
-	std::size_t size() const { return w; }
+		size_t size() const { return w; }
 
-private:
-	std::size_t w;
-};
+	private:
+		size_t w;
+	};
 
-template <typename E>
-struct ArrayND<E, 2> : _::Array<E, 2>
-{
-	ArrayND( std::size_t w, std::size_t h, DeviceId const &device = DeviceId{} ) :
-	  w( w ),
-	  h( h )
+	template <typename E>
+	struct ArrayND<E, 2> : ArrayImpl<E, 2>
 	{
-		auto lock = device.lock();
-		auto desc = cudaCreateChannelDesc<E>();
-		cudaMallocArray( &this->_->_, &desc, w, h );
-		this->_->device = device;
-	}
+		ArrayND( size_t w, size_t h, DeviceId const &device = DeviceId{} ) :
+		  w( w ),
+		  h( h )
+		{
+			auto lock = device.lock();
+			auto desc = cudaCreateChannelDesc<E>();
+			cudaMallocArray( &this->_->_, &desc, w, h );
+			this->_->device = device;
+		}
 
-	std::size_t width() const { return w; }
-	std::size_t height() const { return h; }
+		size_t width() const { return w; }
+		size_t height() const { return h; }
 
-private:
-	std::size_t w, h;
-};
+	private:
+		size_t w, h;
+	};
 
-template <typename E>
-struct ArrayND<E, 3> : _::Array<E, 3>
-{
-	ArrayND( Extent const &extent, DeviceId const &device = DeviceId{} ) :
-	  dim( extent )
+	template <typename E>
+	struct ArrayND<E, 3> : ArrayImpl<E, 3>
 	{
-		auto lock = device.lock();
-		auto desc = cudaCreateChannelDesc<E>();
-		cudaMalloc3DArray( &this->_->_, &desc, dim.get() );
-		this->_->device = device;
-	}
+		ArrayND( Extent const &extent, DeviceId const &device = DeviceId{} ) :
+		  dim( extent )
+		{
+			auto lock = device.lock();
+			auto desc = cudaCreateChannelDesc<E>();
+			cudaMalloc3DArray( &this->_->_, &desc, dim.get() );
+			this->_->device = device;
+		}
 
-	Extent extent() const { return dim; }
+		Extent extent() const { return dim; }
 
-private:
-	Extent dim;
-};
+	private:
+		Extent dim;
+	};
 
-template <typename E>
-using Array1D = ArrayND<E, 1>;
-template <typename E>
-using Array2D = ArrayND<E, 2>;
-template <typename E>
-using Array3D = ArrayND<E, 3>;
+	template <typename E>
+	using Array1D = ArrayND<E, 1>;
+	template <typename E>
+	using Array2D = ArrayND<E, 2>;
+	template <typename E>
+	using Array3D = ArrayND<E, 3>;
+}
 
-}  // namespace cufx
-
+VM_END_MODULE()

@@ -1,26 +1,32 @@
 #pragma once
 
 #include <cuda_runtime.h>
+#include <VMUtils/modules.hpp>
 
 #include "internal/attribute.hpp"
 #include "internal/format.hpp"
 
-namespace cufx
+VM_BEGIN_MODULE( cufx )
+
+using namespace std;
+
+VM_EXPORT
 {
-struct Extent
-{
-	CUFX_DEFINE_ATTRIBUTE( std::size_t, width );
-	CUFX_DEFINE_ATTRIBUTE( std::size_t, height );
-	CUFX_DEFINE_ATTRIBUTE( std::size_t, depth );
+	struct Extent
+	{
+		CUFX_DEFINE_ATTRIBUTE( size_t, width );
+		CUFX_DEFINE_ATTRIBUTE( size_t, height );
+		CUFX_DEFINE_ATTRIBUTE( size_t, depth );
 
-public:
-	std::size_t size() const { return width * height * depth; }
-	cudaExtent get() const { return make_cudaExtent( width, height, depth ); }
-};
+	public:
+		size_t size() const { return width * height * depth; }
+		cudaExtent get() const { return make_cudaExtent( width, height, depth ); }
+	};
+}
 
-}  // namespace cufx
+VM_END_MODULE()
 
-#define CUFX_DEFINE_VECTOR1234_FMT( T ) \
+#define CUFX_DEFINE_VECTOR1234_FMT( T )      \
 	CUFX_DEFINE_VECTOR1_FMT( T##1, x )       \
 	CUFX_DEFINE_VECTOR2_FMT( T##2, x, y )    \
 	CUFX_DEFINE_VECTOR3_FMT( T##3, x, y, z ) \
@@ -39,5 +45,5 @@ CUFX_DEFINE_VECTOR1234_FMT( ulonglong )
 CUFX_DEFINE_VECTOR1234_FMT( float )
 CUFX_DEFINE_VECTOR1234_FMT( double )
 CUFX_DEFINE_VECTOR3_FMT( dim3, x, y, z )
-CUFX_DEFINE_VECTOR3_FMT( cufx::Extent, width, height, depth )
+CUFX_DEFINE_VECTOR3_FMT( ::cufx::Extent, width, height, depth )
 CUFX_DEFINE_VECTOR3_FMT( cudaExtent, width, height, depth )
