@@ -1,7 +1,7 @@
 #pragma once
 
 #include <iostream>
-// #include <stb/stb_image_write.h>
+#include <stb/stb_image_write.h>
 
 #include "memory.hpp"
 #include "transfer.hpp"
@@ -123,7 +123,7 @@ public:
 				at( j, i ).write_to( reinterpret_cast<unsigned char *>( pixel_ptr ) );
 			}
 		}
-		// stbi_write_png( file_name.c_str(), width, height, 4, buffer, width * 4 );
+		stbi_write_png( file_name.c_str(), width, height, 4, buffer, width * 4 );
 	}
 
 private:
@@ -131,11 +131,11 @@ private:
 	Pixel *pixels;
 };
 
-// template <>
-// inline void Image<>::dump( std::string const &file_name ) const
-// {
-// 	stbi_write_png( file_name.c_str(), width, height, 4,
-// 					reinterpret_cast<unsigned char *>( pixels ), width * 4 );
-// }
+template <>
+inline void Image<>::dump( std::string const &file_name ) const
+{
+	stbi_write_png( file_name.c_str(), width, height, 4,
+					reinterpret_cast<unsigned char *>( pixels ), width * 4 );
+}
 
 }  // namespace cufx
