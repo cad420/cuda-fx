@@ -56,6 +56,7 @@ VM_EXPORT
 		bool ok() const { return _ == cudaSuccess; }
 		bool err() const { return !ok(); }
 		explicit operator bool() const { return ok(); }
+		const char *name() const { return cudaGetErrorName( _ ); }
 		const char *message() const { return cudaGetErrorString( _ ); }
 		void unwrap() const
 		{

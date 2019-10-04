@@ -7,6 +7,7 @@
 #include "memory.hpp"
 #include "image.hpp"
 #include "array.hpp"
+#include "context.hpp"
 
 VM_BEGIN_MODULE( cufx )
 
@@ -29,6 +30,10 @@ VM_EXPORT
 		}
 
 	public:
+		Context create_context( unsigned int flags ) const
+		{
+			return Context( flags, *this );
+		}
 		GlobalMemory alloc_global( size_t size ) const
 		{
 			return GlobalMemory( size, *this );
