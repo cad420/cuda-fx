@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cuda_runtime.h>
+#include <mutex>
 
 #include <VMUtils/concepts.hpp>
 #include <VMUtils/modules.hpp>
@@ -15,7 +16,15 @@ VM_EXPORT
 		struct Lock : vm::NoCopy, vm::NoHeap
 		{
 			Lock( int _ ) :
-			  _( _ ) {}
+			  _( _ )
+			{
+				int d = -1;
+				if ( _ >= 0 ) {
+					lock().lock();
+					cudaGetDevice( &d );
+					cudaSetDevice( _ );
+				}
+			}
 			Lock( Lock &&_ ) :
 			  _( _._ )
 			{
@@ -24,7 +33,17 @@ VM_EXPORT
 			Lock &operator=( Lock && ) = delete;
 			~Lock()
 			{
-				if ( _ >= 0 ) { cudaSetDevice( _ ); }
+				if ( _ >= 0 ) {
+					cudaSetDevice( _ );
+					lock().unlock();
+				}
+			}
+
+		private:
+			static std::recursive_mutex &lock()
+			{
+				std::recursive_mutex _;
+				return _;
 			}
 
 		private:
@@ -39,12 +58,7 @@ VM_EXPORT
 		bool is_device() const { return _ >= 0; }
 		Lock lock() const
 		{
-			int d = -1;
-			if ( _ >= 0 ) {
-				cudaGetDevice( &d );
-				cudaSetDevice( _ );
-			}
-			return Lock( d );
+			return Lock( _ );
 		}
 		Props props() const
 		{

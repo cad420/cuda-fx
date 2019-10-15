@@ -7,7 +7,6 @@
 #include "memory.hpp"
 #include "image.hpp"
 #include "array.hpp"
-#include "driver/context.hpp"
 
 VM_BEGIN_MODULE( cufx )
 
@@ -30,10 +29,6 @@ VM_EXPORT
 		}
 
 	public:
-		drv::Context create_context( unsigned int flags ) const
-		{
-			return drv::Context( flags, *this );
-		}
 		GlobalMemory alloc_global( size_t size ) const
 		{
 			return GlobalMemory( size, *this );
@@ -41,7 +36,7 @@ VM_EXPORT
 		template <typename E, size_t N, typename... Args>
 		ArrayND<E, N> alloc_arraynd( Args &&... args ) const
 		{
-			return ArrayND<E, N>( std::forward<Args>( args )... );
+			return ArrayND<E, N>( std::forward<Args>( args )..., *this );
 		}
 		template <typename Pixel>
 		std::pair<GlobalMemory, MemoryView2D<Pixel>> alloc_image_swap( Image<Pixel> const &img ) const
