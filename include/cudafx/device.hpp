@@ -41,7 +41,7 @@ VM_EXPORT
 		template <typename E, size_t N, typename... Args>
 		ArrayND<E, N> alloc_arraynd( Args &&... args ) const
 		{
-			return ArrayND<E, N>( std::forward<Args>( args )... );
+			return ArrayND<E, N>( std::forward<Args>( args )..., *this );
 		}
 		template <typename Pixel>
 		std::pair<GlobalMemory, MemoryView2D<Pixel>> alloc_image_swap( Image<Pixel> const &img ) const
