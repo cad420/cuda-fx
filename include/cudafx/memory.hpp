@@ -46,6 +46,10 @@ VM_EXPORT
 	template <typename T>
 	struct MemoryViewND<T, 1> : MemoryViewNDImpl<T, 1>
 	{
+		__host__ __device__ T *ptr() const
+		{
+			return reinterpret_cast<T *>( this->_.ptr );
+		}
 		__host__ __device__ T &at( size_t x ) const
 		{
 			return reinterpret_cast<T *>( this->_.ptr )[ x ];
@@ -63,6 +67,10 @@ VM_EXPORT
 	template <typename T>
 	struct MemoryViewND<T, 2> : MemoryViewNDImpl<T, 2>
 	{
+		__host__ __device__ T *ptr() const
+		{
+			return reinterpret_cast<T *>( this->_.ptr );
+		}
 		__host__ __device__ T &at( size_t x, size_t y ) const
 		{
 			auto ptr = reinterpret_cast<char *>( this->_.ptr );
@@ -130,10 +138,24 @@ VM_EXPORT
 
 	public:
 		template <typename T>
+		MemoryViewND<T, 1> view_1d( size_t len, size_t offset = 0 ) const
+		{
+			auto mem = MemoryViewND<T, 1>( _->_ + offset, len );
+			static_cast<MemoryViewNDImpl<T, 1> &>( mem ).device = _->device;
+			return mem;
+		}
+		template <typename T>
 		MemoryViewND<T, 2> view_2d( MemoryView2DInfo const &info, size_t offset = 0 ) const
 		{
 			auto mem = MemoryViewND<T, 2>( _->_ + offset, info );
 			static_cast<MemoryViewNDImpl<T, 2> &>( mem ).device = _->device;
+			return mem;
+		}
+		template <typename T>
+		MemoryViewND<T, 3> view_3d( MemoryView2DInfo const &info, cufx::Extent dim, size_t offset = 0 ) const
+		{
+			auto mem = MemoryViewND<T, 3>( _->_ + offset, info, dim );
+			static_cast<MemoryViewNDImpl<T, 3> &>( mem ).device = _->device;
 			return mem;
 		}
 
