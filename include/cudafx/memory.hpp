@@ -126,6 +126,7 @@ VM_EXPORT
 		}
 
 		size_t size() const { return _->size; }
+		char *get() const { return _->_; }
 
 	public:
 		template <typename T>

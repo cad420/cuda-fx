@@ -12,6 +12,9 @@
 #include <VMUtils/concepts.hpp>
 #include <VMUtils/modules.hpp>
 #include <VMUtils/fmt.hpp>
+// #ifndef __CUDACC__
+// #include <future/index.hpp>
+// #endif
 
 VM_BEGIN_MODULE( cufx )
 
@@ -124,7 +127,7 @@ VM_EXPORT
 			}
 
 			cudaStream_t _ = 0;
-			mutex mtx;
+			recursive_mutex mtx;
 		};
 
 		Stream( nullptr_t ) {}
@@ -142,7 +145,7 @@ VM_EXPORT
 
 		private:
 			Inner &stream;
-			unique_lock<mutex> _;
+			unique_lock<recursive_mutex> _;
 		};
 
 	public:
@@ -161,26 +164,87 @@ VM_EXPORT
 
 	struct Task : vm::NoCopy
 	{
+	private:
+// #ifndef __CUDACC__
+// 		struct FutureImpl : koi::Future<Result>
+// 		{
+// 			koi::future::PollState poll() override
+// 			{
+// 				if ( first ) {
+// 					launch();
+// 					first = false;
+// 				}
+// 				switch ( stop.poll() ) {
+// 				case Poll::Done: return koi::future::PollState::Ok;
+// 				default: return koi::future::PollState::Pruned;
+// 				case Poll::Pending: return koi::future::PollState::Pending;
+// 				}
+// 			}
+// 			Result get() override
+// 			{
+// 				return stop.wait();
+// 			}
+
+// 		private:
+// 			FutureImpl( Stream const &stream, vector<function<void( cudaStream_t )>> _ ) :
+// 			  stream( stream ),
+// 			  _( std::move( _ ) )
+// 			{
+// 			}
+
+// 			void launch()
+// 			{
+// 				auto lock = stream.lock();
+// 				start.record();
+// 				for ( auto &e : this->_ ) e( lock.get() );
+// 				stop.record();
+// 			}
+
+// 		private:
+// 			Event start, stop;
+// 			Stream stream;
+// 			vector<function<void( cudaStream_t )>> _;
+// 			bool first = true;
+// 			friend struct Task;
+// 		};
+// #endif
+
+	public:
+// #ifndef __CUDACC__
+// 		using Future = koi::future::_::FutureExt<FutureImpl>;
+// #endif
+
 		Task() = default;
 		Task( function<void( cudaStream_t )> &&_ ) :
-		  _{ std::move( _ ) } {}
+		  _{ std::move( _ ) }
+		{
+		}
 
-		future<Result> launch_async( Stream const &stream = Stream() ) &&
+// #ifndef __CUDACC__
+// 		Future launch_async( Stream const &stream = Stream() ) &&
+// 		{
+// 			return Future( FutureImpl( stream, std::move( _ ) ) );
+// 		}
+// #endif
+		Result launch( Stream const &stream = Stream() ) &&
+		{
+			Event start, stop;
+			auto lock = stream.lock();
+			start.record();
+			for ( auto &e : this->_ ) e( lock.get() );
+			stop.record();
+			return stop.wait();
+		}
+		std::future<Result> launch_async( Stream const &stream = Stream() ) &&
 		{
 			Event start, stop;
 			{
 				auto lock = stream.lock();
 				start.record();
-				for ( auto &e : _ ) e( lock.get() );
+				for ( auto &e : this->_ ) e( lock.get() );
 				stop.record();
 			}
-			return std::async( std::launch::deferred, [=] { return stop.wait(); } );
-		}
-		Result launch( Stream const &stream = Stream() ) &&
-		{
-			auto future = std::move( *this ).launch_async( stream );
-			future.wait();
-			return future.get();
+			return std::async( std::launch::deferred, [=]{ return stop.wait(); } );
 		}
 		Task &chain( Task &&other )
 		{
