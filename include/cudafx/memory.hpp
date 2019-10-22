@@ -54,7 +54,7 @@ VM_EXPORT
 		{
 			return reinterpret_cast<T *>( this->_.ptr )[ x ];
 		}
-		__host__ __device__ size_t size() { return this->_.xsize; }
+		__host__ __device__ size_t size() const { return this->_.xsize; }
 
 	public:
 		MemoryViewND() = default;
