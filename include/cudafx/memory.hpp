@@ -55,6 +55,12 @@ VM_EXPORT
 			return reinterpret_cast<T *>( this->_.ptr )[ x ];
 		}
 		__host__ __device__ size_t size() const { return this->_.xsize; }
+		__host__ __device__ MemoryViewND<T, 1> slice( size_t beg, size_t len ) const
+		{
+			auto view = *this;
+			view._ = make_cudaPitchedPtr( this->ptr() + beg, 0, len, 0 );
+			return view;
+		}
 
 	public:
 		MemoryViewND() = default;
