@@ -1,5 +1,6 @@
 #pragma once
 
+#include <vector>
 #include <VMUtils/modules.hpp>
 
 #include "stream.hpp"
@@ -67,6 +68,11 @@ VM_EXPORT
 		MemoryViewND( void *ptr, size_t len )
 		{
 			this->_ = make_cudaPitchedPtr( ptr, 0, len, 0 );
+		}
+		template <typename U, typename A>
+		MemoryViewND( std::vector<U, A> &vec )
+		{
+			this->_ = make_cudaPitchedPtr( vec.data(), 0, vec.size() * sizeof( U ), 0 );
 		}
 	};
 
