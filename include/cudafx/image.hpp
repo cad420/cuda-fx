@@ -131,6 +131,9 @@ VM_EXPORT
 			stbi_write_png( file_name.c_str(), width, height, 4, buffer, width * 4 );
 		}
 
+		size_t get_width() const { return width; }
+		size_t get_height() const { return height; }
+
 	private:
 		size_t width, height;
 		Pixel *pixels;
