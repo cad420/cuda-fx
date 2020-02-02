@@ -70,10 +70,13 @@ struct MemTrans<T, 3>
 	static Task transfer( MemoryView3D<T> const &dst, MemoryView3D<T> const &src )
 	{
 		return Task( [=]( cudaStream_t _ ) {
-			auto d = dst.get();
-			auto s = src.get();
-			cudaMemcpy2DAsync( d.ptr, d.pitch, s.ptr, s.pitch,
-							   d.xsize * sizeof( T ), d.ysize, copy_type( dst, src ), _ );
+			cudaMemcpy3DParms params = { 0 };
+			auto &srcPtr = params.srcPtr = src.get();
+			params.dstPtr = dst.get();
+			params.extent = dst.extent().get();
+			params.kind = copy_type( src );
+
+			cudaMemcpy3DAsync( &params, _ );
 		} );
 	}
 };
