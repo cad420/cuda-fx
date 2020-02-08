@@ -42,6 +42,16 @@ VM_EXPORT
 			VM_DEFINE_ATTRIBUTE( FilterMode, filter_mode ) = FilterMode::None;
 			VM_DEFINE_ATTRIBUTE( ReadMode, read_mode ) = ReadMode::Raw;
 			VM_DEFINE_ATTRIBUTE( bool, normalize_coords ) = true;
+
+		public:
+			static Options as_array()
+			{
+				return cufx::Texture::Options{}
+				  .set_address_mode( cufx::Texture::AddressMode::Border )
+				  .set_filter_mode( cufx::Texture::FilterMode::None )
+				  .set_read_mode( cufx::Texture::ReadMode::Raw )
+				  .set_normalize_coords( false );
+			}
 		};
 
 	public:
@@ -52,7 +62,9 @@ VM_EXPORT
 			res_desc.resType = cudaResourceTypeArray;
 			res_desc.res.array.array = arr.get();
 
-			cudaCreateTextureObject( &_->_, &res_desc, &tex_desc, nullptr );
+			if ( auto err = cudaCreateTextureObject( &_->_, &res_desc, &tex_desc, nullptr ) ) {
+				throw std::logic_error( cudaGetErrorString( err ) );
+			}
 		}
 		template <typename E, size_t N>
 		Texture( ArrayND<E, N> const &arr, Options const &opts = {} ) :
@@ -65,7 +77,7 @@ VM_EXPORT
 	private:
 		cudaTextureDesc to_texture_desc( Options const &opts )
 		{
-			cudaTextureDesc desc;
+			cudaTextureDesc desc = {};
 			switch ( opts.address_mode ) {
 			case Wrap: desc.addressMode[ 0 ] = cudaAddressModeWrap; break;
 			case Clamp: desc.addressMode[ 0 ] = cudaAddressModeClamp; break;

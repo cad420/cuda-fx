@@ -73,7 +73,7 @@ struct MemTrans<T, 3>
 			cudaMemcpy3DParms params = { 0 };
 			auto &srcPtr = params.srcPtr = src.get();
 			auto &dstPtr = params.dstPtr = dst.get();
-			params.extent = dst.extent();
+			params.extent = src.extent();
 			params.kind = copy_type( dst, src );
 
 			cudaMemcpy3DAsync( &params, _ );
@@ -113,13 +113,16 @@ struct ArrayTrans<T, 2>
 template <typename T>
 struct ArrayTrans<T, 3>
 {
-	static Task transfer( Array3D<T> const &dst, MemoryView3D<T> const &src )
+	static Task transfer( Array3D<T> const &dst, MemoryView3D<T> const &src, cudaPos const *pos = nullptr )
 	{
 		return Task( [=]( cudaStream_t _ ) {
 			cudaMemcpy3DParms params = { 0 };
 			auto &srcPtr = params.srcPtr = src.get();
+			if ( pos ) {
+				params.dstPos = *pos;
+			}
 			params.dstArray = dst.get();
-			params.extent = dst.extent().get();
+			params.extent = src.extent();
 			params.kind = copy_type( src );
 			// using namespace std;
 			// cout << srcPtr.pitch << " " << srcPtr.xsize << " " << srcPtr.ysize << endl;
@@ -147,6 +150,14 @@ VM_EXPORT
 		auto dst_lock = dst.device_id().lock();
 		auto src_lock = src.device_id().lock();
 		return ArrayTrans<T, N>::transfer( dst, src );
+	}
+
+	template <typename T>
+	Task memory_transfer( ArrayND<T, 3> const &dst, MemoryViewND<T, 3> const &src, cudaPos const &pos )
+	{
+		auto dst_lock = dst.device_id().lock();
+		auto src_lock = src.device_id().lock();
+		return ArrayTrans<T, 3>::transfer( dst, src, &pos );
 	}
 }
 

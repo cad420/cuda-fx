@@ -165,54 +165,54 @@ VM_EXPORT
 	struct Task : vm::NoCopy
 	{
 	private:
-// #ifndef __CUDACC__
-// 		struct FutureImpl : koi::Future<Result>
-// 		{
-// 			koi::future::PollState poll() override
-// 			{
-// 				if ( first ) {
-// 					launch();
-// 					first = false;
-// 				}
-// 				switch ( stop.poll() ) {
-// 				case Poll::Done: return koi::future::PollState::Ok;
-// 				default: return koi::future::PollState::Pruned;
-// 				case Poll::Pending: return koi::future::PollState::Pending;
-// 				}
-// 			}
-// 			Result get() override
-// 			{
-// 				return stop.wait();
-// 			}
+		// #ifndef __CUDACC__
+		// 		struct FutureImpl : koi::Future<Result>
+		// 		{
+		// 			koi::future::PollState poll() override
+		// 			{
+		// 				if ( first ) {
+		// 					launch();
+		// 					first = false;
+		// 				}
+		// 				switch ( stop.poll() ) {
+		// 				case Poll::Done: return koi::future::PollState::Ok;
+		// 				default: return koi::future::PollState::Pruned;
+		// 				case Poll::Pending: return koi::future::PollState::Pending;
+		// 				}
+		// 			}
+		// 			Result get() override
+		// 			{
+		// 				return stop.wait();
+		// 			}
 
-// 		private:
-// 			FutureImpl( Stream const &stream, vector<function<void( cudaStream_t )>> _ ) :
-// 			  stream( stream ),
-// 			  _( std::move( _ ) )
-// 			{
-// 			}
+		// 		private:
+		// 			FutureImpl( Stream const &stream, vector<function<void( cudaStream_t )>> _ ) :
+		// 			  stream( stream ),
+		// 			  _( std::move( _ ) )
+		// 			{
+		// 			}
 
-// 			void launch()
-// 			{
-// 				auto lock = stream.lock();
-// 				start.record();
-// 				for ( auto &e : this->_ ) e( lock.get() );
-// 				stop.record();
-// 			}
+		// 			void launch()
+		// 			{
+		// 				auto lock = stream.lock();
+		// 				start.record();
+		// 				for ( auto &e : this->_ ) e( lock.get() );
+		// 				stop.record();
+		// 			}
 
-// 		private:
-// 			Event start, stop;
-// 			Stream stream;
-// 			vector<function<void( cudaStream_t )>> _;
-// 			bool first = true;
-// 			friend struct Task;
-// 		};
-// #endif
+		// 		private:
+		// 			Event start, stop;
+		// 			Stream stream;
+		// 			vector<function<void( cudaStream_t )>> _;
+		// 			bool first = true;
+		// 			friend struct Task;
+		// 		};
+		// #endif
 
 	public:
-// #ifndef __CUDACC__
-// 		using Future = koi::future::_::FutureExt<FutureImpl>;
-// #endif
+		// #ifndef __CUDACC__
+		// 		using Future = koi::future::_::FutureExt<FutureImpl>;
+		// #endif
 
 		Task() = default;
 		Task( function<void( cudaStream_t )> &&_ ) :
@@ -220,20 +220,18 @@ VM_EXPORT
 		{
 		}
 
-// #ifndef __CUDACC__
-// 		Future launch_async( Stream const &stream = Stream() ) &&
-// 		{
-// 			return Future( FutureImpl( stream, std::move( _ ) ) );
-// 		}
-// #endif
-		Result launch( Stream const &stream = Stream() ) &&
+		// #ifndef __CUDACC__
+		// 		Future launch_async( Stream const &stream = Stream() ) &&
+		// 		{
+		// 			return Future( FutureImpl( stream, std::move( _ ) ) );
+		// 		}
+		// #endif
+		Result launch( Stream const &stream = Stream::null() ) &&
 		{
-			Event start, stop;
 			auto lock = stream.lock();
-			start.record();
 			for ( auto &e : this->_ ) e( lock.get() );
-			stop.record();
-			return stop.wait();
+			stream.wait();
+			return cudaGetLastError();
 		}
 		std::future<Result> launch_async( Stream const &stream = Stream() ) &&
 		{
@@ -244,7 +242,7 @@ VM_EXPORT
 				for ( auto &e : this->_ ) e( lock.get() );
 				stop.record();
 			}
-			return std::async( std::launch::deferred, [=]{ return stop.wait(); } );
+			return std::async( std::launch::deferred, [=] { return stop.wait(); } );
 		}
 		Task &chain( Task &&other )
 		{
