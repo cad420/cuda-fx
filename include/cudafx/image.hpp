@@ -32,8 +32,8 @@ VM_EXPORT
 	template <typename Pixel = uchar4>
 	struct ImageView final
 	{
-		__host__ Pixel &at_host( size_t x, size_t y ) const { return host_mem.at( x, y ); }
-		__device__ Pixel &at_device( size_t x, size_t y ) const { return device_mem.at( x, y ); }
+		__host__ __device__ Pixel &at_host( size_t x, size_t y ) const { return host_mem.at( x, y ); }
+		__host__ __device__ Pixel &at_device( size_t x, size_t y ) const { return device_mem.at( x, y ); }
 		__host__ __device__ size_t width() const { return host_mem.width(); }
 		__host__ __device__ size_t height() const { return host_mem.height(); }
 
