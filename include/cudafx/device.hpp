@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <VMUtils/modules.hpp>
+#include <VMUtils/option.hpp>
 
 #include "device_id.hpp"
 #include "memory.hpp"
@@ -19,7 +20,7 @@ VM_EXPORT
 	{
 		static vector<Device> scan()
 		{
-			int n;
+			int n = 0;
 			cudaGetDeviceCount( &n );
 			vector<Device> _;
 			for ( int i = 0; i != n; ++i ) {
@@ -27,6 +28,14 @@ VM_EXPORT
 				_.emplace_back( std::move( e ) );
 			}
 			return _;
+		}
+
+		static vm::Option<Device> get_default()
+		{
+			int n = 0;
+			cudaGetDeviceCount( &n );
+			if ( n == 0 ) return vm::None{};
+			return Device( 0 );
 		}
 
 	public:

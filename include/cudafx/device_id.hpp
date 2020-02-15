@@ -1,9 +1,7 @@
 #pragma once
 
-#include <cuda_runtime.h>
-
 #include <VMUtils/concepts.hpp>
-#include <VMUtils/modules.hpp>
+#include "common_def.hpp"
 
 VM_BEGIN_MODULE( cufx )
 
