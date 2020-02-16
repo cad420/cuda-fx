@@ -34,6 +34,7 @@ VM_EXPORT
 		{
 			int n = 0;
 			cudaGetDeviceCount( &n );
+			cudaGetLastError();
 			if ( n == 0 ) return vm::None{};
 			return Device( 0 );
 		}

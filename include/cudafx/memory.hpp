@@ -59,7 +59,7 @@ VM_EXPORT
 		__host__ __device__ MemoryViewND<T, 1> slice( size_t beg, size_t len ) const
 		{
 			auto view = *this;
-			view._ = make_cudaPitchedPtr( this->ptr() + beg, 0, len, 0 );
+			view._ = cudaPitchedPtr{ this->ptr() + beg, 0, len, 0 };
 			return view;
 		}
 
@@ -67,12 +67,12 @@ VM_EXPORT
 		MemoryViewND() = default;
 		MemoryViewND( void *ptr, size_t len )
 		{
-			this->_ = make_cudaPitchedPtr( ptr, 0, len, 0 );
+			this->_ = cudaPitchedPtr{ ptr, 0, len, 0 };
 		}
 		template <typename U, typename A>
 		MemoryViewND( std::vector<U, A> &vec )
 		{
-			this->_ = make_cudaPitchedPtr( vec.data(), 0, vec.size() * sizeof( U ), 0 );
+			this->_ = cudaPitchedPtr{ vec.data(), 0, vec.size() * sizeof( U ), 0 };
 		}
 	};
 
@@ -96,20 +96,20 @@ VM_EXPORT
 		MemoryViewND() = default;
 		MemoryViewND( void *ptr, MemoryView2DInfo const &info )
 		{
-			this->_ = make_cudaPitchedPtr( ptr, info.stride,
-										   info.width, info.height );
+			this->_ = cudaPitchedPtr{ ptr, info.stride, info.width, info.height };
 		}
 	};
 
 	template <typename T>
 	struct MemoryViewND<T, 3> : MemoryViewNDImpl<T, 3>
 	{
-		// __host__ __device__ T &at( size_t x, size_t y ) const
-		// {
-		// 	auto ptr = reinterpret_cast<char *>( this->_.ptr );
-		// 	auto line = reinterpret_cast<T *>( ptr + y * this->_.pitch );
-		// 	return line[ x ];
-		// }
+		__host__ __device__ T &at( size_t x, size_t y, size_t z ) const
+		{
+			auto ptr = reinterpret_cast<char *>( this->_.ptr ) +
+					   this->_.pitch * this->_.ysize * z;
+			auto line = reinterpret_cast<T *>( ptr + y * this->_.pitch );
+			return line[ x ];
+		}
 		__host__ __device__ cudaExtent extent() const { return dim.get(); }
 
 	public:
@@ -117,8 +117,7 @@ VM_EXPORT
 		MemoryViewND( void *ptr, MemoryView2DInfo const &info, cufx::Extent dim ) :
 		  dim( dim )
 		{
-			this->_ = make_cudaPitchedPtr( ptr, info.stride,
-										   info.width, info.height );
+			this->_ = cudaPitchedPtr{ ptr, info.stride, info.width, info.height };
 		}
 
 	private:

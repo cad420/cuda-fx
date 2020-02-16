@@ -20,7 +20,7 @@ VM_EXPORT
 
 	public:
 		__host__ __device__ size_t size() const { return width * height * depth; }
-		__host__ __device__ cudaExtent get() const { return make_cudaExtent( width, height, depth ); }
+		__host__ __device__ cudaExtent get() const { return cudaExtent{ width, height, depth }; }
 	};
 }
 
@@ -45,5 +45,5 @@ CUFX_DEFINE_VECTOR1234_FMT( ulonglong )
 CUFX_DEFINE_VECTOR1234_FMT( float )
 CUFX_DEFINE_VECTOR1234_FMT( double )
 CUFX_DEFINE_VECTOR3_FMT( dim3, x, y, z )
-CUFX_DEFINE_VECTOR3_FMT(::cufx::Extent, width, height, depth )
+CUFX_DEFINE_VECTOR3_FMT( ::cufx::Extent, width, height, depth )
 CUFX_DEFINE_VECTOR3_FMT( cudaExtent, width, height, depth )

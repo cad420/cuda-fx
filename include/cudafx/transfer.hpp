@@ -73,8 +73,8 @@ struct MemTrans<T, 3>
 			cudaMemcpy3DParms params = { 0 };
 			auto &srcPtr = params.srcPtr = src.get();
 			params.dstPtr = dst.get();
-			params.extent = dst.extent().get();
-			params.kind = copy_type( src );
+			params.extent = dst.extent();
+			params.kind = copy_type( dst, src );
 
 			cudaMemcpy3DAsync( &params, _ );
 		} );
