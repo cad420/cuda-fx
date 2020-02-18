@@ -68,10 +68,8 @@ VM_EXPORT
 
 	struct StdByte4Pixel
 	{
-		void write_to( unsigned char dst[ 4 ] ) const
-		{
-			memcpy( dst, &val, sizeof( uchar4 ) );
-		}
+		__host__ __device__ void
+		  write_to( uchar4 &dst ) const { dst = val; }
 
 	private:
 		uchar4 val;
@@ -122,7 +120,7 @@ VM_EXPORT
 			for ( int i = 0; i != _->height; ++i ) {
 				for ( int j = 0; j != _->width; ++j ) {
 					at( j, i ).write_to(
-					  reinterpret_cast<unsigned char *>( &view.at_host( j, i ) ) );
+					  *reinterpret_cast<uchar4 *>( &view.at_host( j, i ) ) );
 				}
 			}
 		}
