@@ -66,39 +66,40 @@ VM_EXPORT
 		friend struct Image<Pixel>;
 	};
 
-	template <typename Pixel = uchar4>
-	struct Image final : vm::NoCopy
+	struct StdByte4Pixel
 	{
-		Image( size_t width, size_t height ) :
-		  width( width ),
-		  height( height ),
-		  pixels( new Pixel[ width * height ]() ) {}  // init to zero
-
-		Image( Image &&_ ) :
-		  width( _.width ),
-		  height( _.height ),
-		  pixels( _.pixels )
+		void write_to( unsigned char dst[ 4 ] ) const
 		{
-			_.pixels = nullptr;
+			memcpy( dst, &val, sizeof( uchar4 ) );
 		}
 
-		Image &operator=( Image &&_ )
-		{
-			if ( pixels ) delete pixels;
-			width = _.width;
-			height = _.height;
-			pixels = _.pixels;
-			_.pixels = nullptr;
-			return *this;
-		}
+	private:
+		uchar4 val;
+	};
 
-		~Image()
+	template <typename Pixel = StdByte4Pixel>
+	struct Image final
+	{
+	private:
+		struct Inner : vm::NoCopy, vm::NoMove
 		{
-			if ( pixels ) delete pixels;
+			Inner( size_t width, size_t height ) :
+			  width( width ), height( height ), pixels( width * height )
+			{
+			}
+
+			size_t width, height;
+			std::vector<Pixel> pixels;
+		};
+
+	public:
+		Image( size_t width, size_t height )
+		{
+			_.reset( new Inner( width, height ) );
 		}
 
 	public:
-		Pixel &at( size_t x, size_t y ) const { return pixels[ x + y * width ]; }
+		Pixel &at( size_t x, size_t y ) const { return _->pixels[ x + y * _->width ]; }
 
 		ImageView<Pixel> view( Rect const &region ) const
 		{
@@ -113,37 +114,51 @@ VM_EXPORT
 		}
 		ImageView<Pixel> view() const
 		{
-			return view( Rect{}.set_x0( 0 ).set_y0( 0 ).set_x1( width ).set_y1( height ) );
+			return view( Rect{}.set_x0( 0 ).set_y0( 0 ).set_x1( _->width ).set_y1( _->height ) );
 		}
 
-		void dump( string const &file_name ) const
+		void dump( ImageView<StdByte4Pixel> const &view ) const
 		{
-			string _;
-			_.resize( width * height * sizeof( char ) * 4 );
-			auto buffer = const_cast<char *>( _.data() );
-			for ( int i = 0; i != height; ++i ) {
-				auto line_ptr = buffer + ( width * 4 ) * i;
-				for ( int j = 0; j != width; ++j ) {
-					auto pixel_ptr = line_ptr + 4 * j;
-					at( j, i ).write_to( reinterpret_cast<unsigned char *>( pixel_ptr ) );
+			for ( int i = 0; i != _->height; ++i ) {
+				for ( int j = 0; j != _->width; ++j ) {
+					at( j, i ).write_to(
+					  reinterpret_cast<unsigned char *>( &view.at_host( j, i ) ) );
 				}
 			}
-			stbi_write_png( file_name.c_str(), width, height, 4, buffer, width * 4 );
+		}
+		Image<> dump() const
+		{
+			auto img = Image<>( _->width, _->height );
+			dump( img.view() );
+			return img;
+		}
+		void dump( string const &file_name ) const
+		{
+			auto img = dump();
+			stbi_write_png( file_name.c_str(), _->width, _->height, 4,
+							reinterpret_cast<unsigned char *>( img._->pixels.data() ), _->width * 4 );
 		}
 
-		size_t get_width() const { return width; }
-		size_t get_height() const { return height; }
+		size_t get_width() const { return _->width; }
+		size_t get_height() const { return _->height; }
 
 	private:
-		size_t width, height;
-		Pixel *pixels;
+		shared_ptr<Inner> _;
+		template <typename T>
+		friend struct Image;
 	};
+
+	template <>
+	inline Image<> Image<>::dump() const
+	{
+		return *this;
+	}
 
 	template <>
 	inline void Image<>::dump( string const &file_name ) const
 	{
-		stbi_write_png( file_name.c_str(), width, height, 4,
-						reinterpret_cast<unsigned char *>( pixels ), width * 4 );
+		stbi_write_png( file_name.c_str(), _->width, _->height, 4,
+						reinterpret_cast<unsigned char *>( _->pixels.data() ), _->width * 4 );
 	}
 }
 
