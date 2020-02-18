@@ -50,6 +50,20 @@ VM_EXPORT
 			cudaGetDeviceProperties( &val, _ );
 			return val;
 		}
+		std::size_t free_memory_bytes() const
+		{
+			std::size_t free, total;
+			auto _ = this->lock();
+			cudaMemGetInfo( &free, &total );
+			return free;
+		}
+		std::size_t total_memory_bytes() const
+		{
+			std::size_t free, total;
+			auto _ = this->lock();
+			cudaMemGetInfo( &free, &total );
+			return total;
+		}
 
 		explicit DeviceId( int _ = 0 ) :
 		  _( _ ) {}
