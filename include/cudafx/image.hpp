@@ -29,7 +29,7 @@ VM_EXPORT
 	template <typename Pixel>
 	struct Image;
 
-	template <typename Pixel = uchar4>
+	template <typename Pixel = uchar3>
 	struct ImageView final
 	{
 		__host__ __device__ Pixel &at_host( size_t x, size_t y ) const { return host_mem.at( x, y ); }
@@ -66,16 +66,16 @@ VM_EXPORT
 		friend struct Image<Pixel>;
 	};
 
-	struct StdByte4Pixel
+	struct StdByte3Pixel
 	{
 		__host__ __device__ void
-		  write_to( uchar4 &dst ) const { dst = val; }
+		  write_to( uchar3 &dst, uchar3 const & ) const { dst = val; }
 
 	private:
-		uchar4 val;
+		uchar3 val;
 	};
 
-	template <typename Pixel = StdByte4Pixel>
+	template <typename Pixel = StdByte3Pixel>
 	struct Image final
 	{
 	private:
@@ -115,12 +115,13 @@ VM_EXPORT
 			return view( Rect{}.set_x0( 0 ).set_y0( 0 ).set_x1( _->width ).set_y1( _->height ) );
 		}
 
-		void dump( ImageView<StdByte4Pixel> const &view ) const
+		void dump( ImageView<StdByte3Pixel> const &view ) const
 		{
 			for ( int i = 0; i != _->height; ++i ) {
 				for ( int j = 0; j != _->width; ++j ) {
 					at( j, i ).write_to(
-					  *reinterpret_cast<uchar4 *>( &view.at_host( j, i ) ) );
+					  *reinterpret_cast<uchar3 *>( &view.at_host( j, i ) ),
+					  uchar3{} );
 				}
 			}
 		}
