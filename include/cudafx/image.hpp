@@ -133,9 +133,7 @@ VM_EXPORT
 		}
 		void dump( string const &file_name ) const
 		{
-			auto img = dump();
-			stbi_write_png( file_name.c_str(), _->width, _->height, 4,
-							reinterpret_cast<unsigned char *>( img._->pixels.data() ), _->width * 4 );
+			dump().dump( file_name );
 		}
 
 		size_t get_width() const { return _->width; }
@@ -156,8 +154,8 @@ VM_EXPORT
 	template <>
 	inline void Image<>::dump( string const &file_name ) const
 	{
-		stbi_write_png( file_name.c_str(), _->width, _->height, 4,
-						reinterpret_cast<unsigned char *>( _->pixels.data() ), _->width * 4 );
+		stbi_write_png( file_name.c_str(), _->width, _->height, 3,
+						reinterpret_cast<unsigned char *>( _->pixels.data() ), _->width * 3 );
 	}
 }
 
