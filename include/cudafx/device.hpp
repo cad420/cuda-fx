@@ -16,6 +16,8 @@ using namespace std;
 
 VM_EXPORT
 {
+	struct WorkerThread;
+	
 	struct Device : DeviceId
 	{
 		static vector<Device> scan()
@@ -28,6 +30,13 @@ VM_EXPORT
 				_.emplace_back( std::move( e ) );
 			}
 			return _;
+		}
+
+		static Device get_current()
+		{
+			int n = 0;
+			cudaGetDevice( &n );
+			return Device( n );
 		}
 
 		static vm::Option<Device> get_default()
@@ -69,6 +78,30 @@ VM_EXPORT
 	private:
 		Device( int _ ) :
 		  DeviceId( _ ) {}
+		
+		friend struct WorkerThread;
+	};
+
+	struct WorkerThread : std::thread
+	{
+		WorkerThread( std::function<void()> const &runner,
+					  vm::Option<Device> const &device ) :
+			std::thread( [runner, device, this] {
+					if ( device.has_value() ) {
+						this->lk = device.value().lock();
+					}
+					runner();
+				} )
+		{
+		}
+
+		WorkerThread( std::function<void()> const &runner,
+					  int device ) :
+			WorkerThread( runner, Device( device ) )
+		{
+		}
+	private:
+		vm::Option<Device::Lock> lk;
 	};
 }
 

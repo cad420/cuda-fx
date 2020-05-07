@@ -42,6 +42,7 @@ VM_EXPORT
 			VM_DEFINE_ATTRIBUTE( FilterMode, filter_mode ) = FilterMode::None;
 			VM_DEFINE_ATTRIBUTE( ReadMode, read_mode ) = ReadMode::Raw;
 			VM_DEFINE_ATTRIBUTE( bool, normalize_coords ) = true;
+			VM_DEFINE_ATTRIBUTE( DeviceId, device ) = DeviceId{};
 
 		public:
 			static Options as_array()
@@ -56,8 +57,11 @@ VM_EXPORT
 
 	public:
 		template <typename E, size_t N>
-		Texture( ArrayND<E, N> const &arr, cudaTextureDesc const &tex_desc )
+		Texture( ArrayND<E, N> const &arr, cudaTextureDesc const &tex_desc,
+				 DeviceId const &device ) :
+			device( device )
 		{
+			auto lk = device.lock();
 			cudaResourceDesc res_desc = {};
 			res_desc.resType = cudaResourceTypeArray;
 			res_desc.res.array.array = arr.get();
@@ -68,7 +72,7 @@ VM_EXPORT
 		}
 		template <typename E, size_t N>
 		Texture( ArrayND<E, N> const &arr, Options const &opts = {} ) :
-		  Texture( arr, to_texture_desc( opts ) )
+			Texture( arr, to_texture_desc( opts ), opts.device )
 		{
 		}
 
@@ -99,6 +103,7 @@ VM_EXPORT
 
 	private:
 		shared_ptr<Inner> _ = make_shared<Inner>();
+		DeviceId device;
 	};
 }
 

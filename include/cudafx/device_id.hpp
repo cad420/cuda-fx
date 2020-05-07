@@ -9,8 +9,8 @@ VM_EXPORT
 {
 	struct DeviceId
 	{
-	private:
-		struct Lock : vm::NoCopy, vm::NoHeap
+	public:
+		struct Lock : vm::NoCopy
 		{
 			Lock( int _ ) :
 			  _( _ ) {}
